@@ -41,7 +41,7 @@ FORM f_concatena_query .
     ( clause = | cnh LIKE '{ v_cnh }%' AND |
       exist = COND #( WHEN v_cnh IS INITIAL THEN abap_false ELSE abap_true ) )
 
-    ( clause = | status LIKE '{ v_cnh }%' AND |
+    ( clause = | status LIKE '{ v_status }%' AND |
     exist = COND #( WHEN v_status IS INITIAL THEN abap_false ELSE abap_true ) )
   ).
 
