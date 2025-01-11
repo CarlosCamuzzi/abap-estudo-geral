@@ -49,29 +49,29 @@ WRITE:/ lv_text. ULINE. SKIP.
 " 1. ... find( val = text {sub = substring}|{pcre|regex = regex} [case = case]
 "           [off = off] [len = len] [occ = occ] ) ...
 
-" Nota: FIND vai retornar o index do primeiro match, ou seja:
+" Nota: FIND vai retornar o index do match, ou seja:
 " 'rato' retorna 2 e 'r' também retornará 2
 
-lv_find = find( val = lv_text sub = 'r'  ).       " 2: 'r' da palavra 'rato'
+lv_find = find( val = lv_text sub = 'r'  ).       " 2: 'r' da palavra 'r'ato
 WRITE:/ 'FIND:', lv_find.
 
-lv_find = find( val = lv_text sub = 'rato'  ).    " 2: 'r' da palavra 'rato'
+lv_find = find( val = lv_text sub = 'rato'  ).    " 2: 'r' da palavra 'r'ato
 WRITE:/ 'FIND:', lv_find.
 
-lv_find = find( val = lv_text sub = 'a'  ).       " 3: 'a' da palavra 'rato'
+lv_find = find( val = lv_text sub = 'a'  ).       " 3: 'a' da palavra r'a'to
 WRITE:/ 'FIND:', lv_find.
 
-lv_find = find( val = lv_text sub = 'roupa'  ).   " 14: 'r' a palavra 'roupa'
+lv_find = find( val = lv_text sub = 'roupa'  ).   " 14: 'r' a palavra 'r'oupa
 WRITE:/ 'FIND:', lv_find.
 
-lv_find = find( val = lv_text sub = 'Roma'  ).    " 30: 'R' da palavra 'Roma'
+lv_find = find( val = lv_text sub = 'Roma'  ).    " 30: 'R' da palavra 'R'oma
 WRITE:/ 'FIND:', lv_find.
 
 " OCC POSITIVO (search left -> right) E LEN
 " off = começa do index x / len = termina no index y / occ = primeira ocorrência
 " Qualquer busca fora dessa subarea retornará -1 (não encontrado)
 
-lv_find = find( val = lv_text sub = 'a' off = 1 len = 3 occ = 1  ).   " 3: 'a' da palavra 'rato'
+lv_find = find( val = lv_text sub = 'a' off = 1 len = 3 occ = 1  ).   " 3: 'a' da palavra r'a'to
 WRITE:/ 'FIND:', lv_find.
 
 " Return -1, pois dentro da subárea 1 a 3 não tem uma segunda ocorrência de 'a'
@@ -83,12 +83,12 @@ lv_find = find( val = lv_text sub = 'a' off = 1 len = 14 occ = 2  ).   " 12: 'a'
 WRITE:/ 'FIND:', lv_find.
 
 " OCC NEGATIVO (search right -> left) E LEN
-" off = começa do comprimento da string / len = 30 posições / occ -1: direita para esquerda
+" off = index que começa a busca na string / len = 30 posições / occ -1: direita para esquerda
 " Para busca reversa, off tem que ser maior ou igual a len
-lv_find = find( val = lv_text sub = 'Roma' off = strlen( lv_text ) len = 30 occ = -1 ).   " 30: 'R' da palavra 'Roma'
+lv_find = find( val = lv_text sub = 'Roma' off = strlen( lv_text ) len = 30 occ = -1 ).   " 30: 'R' da palavra 'R'oma
 WRITE:/ 'FIND:', lv_find.
 
-lv_find = find( val = lv_text sub = 'a' off = strlen( lv_text ) len = 30 occ = -1 ).      " 41: último 'a' da palavra 'ainda'
+lv_find = find( val = lv_text sub = 'a' off = strlen( lv_text ) len = 30 occ = -1 ).      " 41: último 'a' da palavra aind'a'
 WRITE:/ 'FIND:', lv_find.
 
 
