@@ -100,7 +100,7 @@ TRY .
     "---------------------------------------------------------------------------------------------------
 
     " 57 = 53 (f de 'f'ome) + 4 (comprimento sub 'fome')
-    lv_find = find_end( val = lv_text sub = 'fome' off = strlen( lv_text ) len = 10 occ = -1 ).
+    lv_find = find_end( val = lv_text sub = 'fome' off = strlen( lv_text ) len  = 10 occ = -1 ).
     WRITE:/ 'FIND_END:', lv_find.
 
     " 36 = 35 de ...roma 'e' ... + 1 (comprimento de 'e')
