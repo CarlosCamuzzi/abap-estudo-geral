@@ -34,6 +34,15 @@
 **********************************************************************
 *
 * Obs.: Regex, PCRE E POSIX abordados em outro arquivo
+*
+**********************************************************************
+
+* Dicas:
+*   ◾ Utilizando as funções de busca relacionadas count e count_...,
+*      é possível determinar o número total de ocorrências em vez de um deslocamento.
+*   ◾ Assim como a instrução FIND, as funções de busca podem ser significativamente mais
+*      rápidas do que o operador de comparação CS.
+
 *&---------------------------------------------------------------------*
 
 REPORT zr_string_find NO STANDARD PAGE HEADING  .
