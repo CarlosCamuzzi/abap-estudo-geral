@@ -12,8 +12,8 @@
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>String</ENTRY>
-     <LENGTH>6</LENGTH>
+     <ENTRY>String: func find any of</ENTRY>
+     <LENGTH>24</LENGTH>
     </item>
    </TPOOL>
   </asx:values>

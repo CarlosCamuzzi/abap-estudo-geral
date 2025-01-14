@@ -3,7 +3,7 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <PROGDIR>
-    <NAME>ZR_STRING_FIND_ANY_NOT_OF</NAME>
+    <NAME>ZR_HTTP_CLIENT</NAME>
     <SUBC>1</SUBC>
     <RLOAD>E</RLOAD>
     <FIXPT>X</FIXPT>
@@ -12,8 +12,8 @@
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>String: find any not of</ENTRY>
-     <LENGTH>23</LENGTH>
+     <ENTRY>HTTP Client - Exemplo</ENTRY>
+     <LENGTH>21</LENGTH>
     </item>
    </TPOOL>
   </asx:values>
