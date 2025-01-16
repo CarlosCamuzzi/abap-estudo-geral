@@ -11,6 +11,18 @@
    </PROGDIR>
    <TPOOL>
     <item>
+     <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>Dados encontrados</ENTRY>
+     <LENGTH>27</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>002</KEY>
+     <ENTRY>Nenhum dado encontrado</ENTRY>
+     <LENGTH>44</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Prática de OpenSql usando tabela MARA</ENTRY>
      <LENGTH>37</LENGTH>
