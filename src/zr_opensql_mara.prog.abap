@@ -2,7 +2,9 @@
 *& Report ZR_OPENSQL_MARA
 *&---------------------------------------------------------------------*
 *
-* Table: MARA
+* Tables: MARA: General Material Data
+*         MAKT: Material Descriptions
+*         MBEW: Material Valuation
 *
 * -------------------------------
 *   Lista de estudo
@@ -13,16 +15,21 @@
 *  ( X ) Seleção com agregação
 *  ( X ) Inserção de registros
 *  ( X ) Atualização de registros
-*  ( ) Deleção de registros
-*  ( ) Seleção com FOR ALL ENTRIES
-*  ( ) Joins com outras tabelas
-*  ( ) Subqueries
+*  ( X ) Deleção de registros
+*  ( X ) Seleção com FOR ALL ENTRIES
+*  ( X ) Joins com outras tabelas
+*  ( X ) Subqueries
 *  ( ) ALV
 * -------------------------------
-
+*
+**********************************************************************
+*  PERFORM f_display_data USING comentado em algumas partes para fim
+*    de testes de outras partes de código.
+**********************************************************************
+*
 **********************************************************************
 * RANGE:
-* RSPARAMS - ABAP: General Structure for PARA METERS and SELECT-OPTIONS
+* RSPARAMS - ABAP: General Structure for PARAMETERS and SELECT-OPTIONS
 **********************************************************************
 *
 *  Alguns valores comuns para OPTION são:
@@ -46,6 +53,7 @@
 
 REPORT zr_opensql_mara.
 
+" Definindo TYPES para usar somente os campos desejados
 TYPES: BEGIN OF ty_mara,
          matnr TYPE mara-matnr,
          ersda TYPE mara-ersda,
@@ -60,8 +68,13 @@ TYPES: BEGIN OF ty_mara,
          gewei TYPE mara-gewei,
        END OF ty_mara.
 
-DATA: lt_mara TYPE TABLE OF ty_mara,
-      wa_mara TYPE ty_mara.
+" Internal Table
+DATA: lt_mara TYPE TABLE OF ty_mara,   " General Material Data
+      lt_makt TYPE TABLE OF makt.      " Material Descriptions
+
+" Work Area
+DATA: wa_mara TYPE ty_mara.
+
 
 " RANGE ------------------------------------------------------------------------------
 * A linha de range (ls_matnr_range) é uma estrutura temporária usada
@@ -78,6 +91,13 @@ START-OF-SELECTION.
   PERFORM f_select_range.
   PERFORM f_select_multiple_condition.
   PERFORM f_select_aggregation.
+  PERFORM f_select_for_all_entries.
+  PERFORM f_select_join.
+  PERFORM f_select_subqueries.
+
+  " Chamado em PERFORM f_select_subqueries
+  "PERFORM f_alv_mara.
+
   " Comentado pq vai dar erro, pois os dados já foram inseridos/atualizados/excluídos
   " PERFORM f_insert_data.
   " PERFORM f_update_data.
@@ -140,11 +160,11 @@ FORM f_select_range .
    WHERE matnr IN @lt_matnr_range.
 
   IF sy-subrc EQ 0.
-    MESSAGE: TEXT-001 TYPE 'S'.
+    MESSAGE: TEXT-001 TYPE 'S'.         " Dados encontrados
     "PERFORM f_display_data USING lt_mara.
 
   ELSE.
-    MESSAGE: TEXT-001 TYPE 'E'.
+    MESSAGE: TEXT-001 TYPE 'E'.         " Nenhum dado encontrado
   ENDIF.
 
 ENDFORM.
@@ -175,11 +195,11 @@ FORM f_select_multiple_condition .
     AND mtart = 'ROH'.
 
   IF sy-subrc EQ 0.
-    MESSAGE: TEXT-001 TYPE 'S'.
+    MESSAGE: TEXT-001 TYPE 'S'.       " Dados encontrados
     "PERFORM f_display_data USING lt_mara.
 
   ELSE.
-    MESSAGE: TEXT-001 TYPE 'E'.
+    MESSAGE: TEXT-001 TYPE 'E'.      " Nenhum dado encontrado
   ENDIF.
 
 
@@ -197,11 +217,11 @@ FORM f_select_aggregation .
     ORDER BY mtart.
 
   IF sy-subrc EQ 0.
-    MESSAGE: TEXT-001 TYPE 'S'.
+    MESSAGE: TEXT-001 TYPE 'S'.       " Dados encontrados
     "PERFORM f_display_data USING lt_mtart.
 
   ELSE.
-    MESSAGE: TEXT-002 TYPE 'E'.
+    MESSAGE: TEXT-002 TYPE 'E'.       "  Nenhum dado encontrado
   ENDIF.
 
 ENDFORM.
@@ -237,7 +257,7 @@ ENDFORM.
 
 *&---------------------------------------------------------------------*
 *& Form f_select_with_range:  Buscar itens add com range
-* Chamado no PERFORM f_insert_data.
+* Chamado no PERFORM f_insert_data, f_delete_data, f_update_data
 *&---------------------------------------------------------------------*
 FORM f_select_with_range .
 
@@ -259,7 +279,8 @@ FORM f_select_with_range .
     WHERE matnr IN @lt_matnr_range
     ORDER BY matnr DESCENDING.
 
-  PERFORM f_display_data USING lt_new_mat.
+  "  PERFORM f_display_data USING lt_new_mat.
+
 ENDFORM.
 
 *&---------------------------------------------------------------------*
@@ -295,6 +316,110 @@ FORM f_delete_data .
 
   ELSE.
     MESSAGE: TEXT-008 TYPE 'E'.   " Erro ao excluir registro
+  ENDIF.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form f_select_for_all_entries: Busca com For All Entries
+*&---------------------------------------------------------------------*
+FORM f_select_for_all_entries .
+  SELECT matnr, ersda, ernam,
+         vpsta, pstat, mtart,
+         matkl, meins, brgew,
+         ntgew, gewei
+    FROM mara
+    INTO TABLE @lt_mara
+    WHERE  mtart = 'FERT'
+    ORDER BY matnr.
+
+  IF sy-subrc EQ 0.
+
+    SELECT *  FROM makt
+      INTO TABLE @lt_makt
+      FOR ALL ENTRIES IN @lt_mara
+      WHERE matnr = @lt_mara-matnr
+        AND spras = 'J'.
+
+    MESSAGE: TEXT-001 TYPE 'S'.       " Dados inseridos com sucesso
+
+    "    PERFORM  f_display_data USING lt_makt.
+
+  ELSE.
+    MESSAGE: TEXT-002 TYPE 'E'.       " Erro ao inserir dados
+  ENDIF.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form f_select_join: Join com outras tabelas
+*&---------------------------------------------------------------------*
+FORM f_select_join .
+
+  SELECT ma~matnr, ma~ersda, ma~ernam,
+         ma~vpsta, ma~pstat, ma~mtart,
+         mk~spras, mk~maktx, mk~maktg
+    FROM mara AS ma
+      INNER JOIN makt AS mk
+        ON ma~matnr = mk~matnr
+      INTO TABLE @DATA(lt_material)
+        WHERE ma~mtart = 'ROH'
+        AND mk~spras = 'M'
+        ORDER BY ma~matnr.
+
+  IF sy-subrc EQ 0.
+    MESSAGE: TEXT-001 TYPE 'S'.       " Dados encontrados
+    " PERFORM f_display_data USING lt_material.
+  ELSE.
+    MESSAGE: TEXT-002 TYPE 'E'.       "  Nenhum dado encontrado
+  ENDIF.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form f_select_subqueries: Select com subquerie
+*&---------------------------------------------------------------------*
+FORM f_select_subqueries .
+
+  SELECT matnr, ersda, ernam,
+         vpsta, pstat, mtart,
+         matkl, meins, brgew,
+         ntgew, gewei
+    FROM mara
+    INTO TABLE @lt_mara
+    WHERE matnr IN ( SELECT matnr     " Select em apenas o campo a ser comparado
+                      FROM mbew       " Material Valuation
+                      WHERE bwkey = 1010 )
+    ORDER BY PRIMARY KEY.
+
+  IF sy-subrc EQ 0.
+    MESSAGE: TEXT-001 TYPE 'S'.       " Dados encontrados
+    "PERFORM f_display_data USING lt_mara.
+    PERFORM f_alv_mara.
+  ELSE.
+    MESSAGE: TEXT-002 TYPE 'E'.       "  Nenhum dado encontrado
+  ENDIF.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form f_alv_mara: Relatório ALV
+*&---------------------------------------------------------------------*
+FORM f_alv_mara.
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program = sy-repid
+    TABLES
+      t_outtab           = lt_mara
+    EXCEPTIONS
+      program_error      = 1
+      OTHERS             = 2.
+
+  IF sy-subrc EQ 0.
+    MESSAGE: TEXT-001 TYPE 'S'.       " Dados encontrados
+  ELSE.
+    MESSAGE: TEXT-002 TYPE 'E'.       "  Nenhum dado encontrado
   ENDIF.
 
 ENDFORM.
