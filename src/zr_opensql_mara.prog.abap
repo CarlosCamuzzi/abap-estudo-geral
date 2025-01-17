@@ -68,13 +68,14 @@ TYPES: BEGIN OF ty_mara,
          gewei TYPE mara-gewei,
        END OF ty_mara.
 
-" Internal Table
-DATA: lt_mara TYPE TABLE OF ty_mara,   " General Material Data
-      lt_makt TYPE TABLE OF makt.      " Material Descriptions
+" Internal Tables
+DATA: lt_mara     TYPE TABLE OF ty_mara,   " General Material Data
+      lt_makt     TYPE TABLE OF makt,      " Material Descriptions
+      lt_fieldcat TYPE slis_t_fieldcat_alv.   " Características colunas relatório alv
 
 " Work Area
-DATA: wa_mara TYPE ty_mara.
-
+DATA: wa_mara TYPE ty_mara,
+      wa_fieldcat type slis_fieldcat_alv.   " Características colunas relatório alv
 
 " RANGE ------------------------------------------------------------------------------
 * A linha de range (ls_matnr_range) é uma estrutura temporária usada
@@ -395,6 +396,7 @@ FORM f_select_subqueries .
   IF sy-subrc EQ 0.
     MESSAGE: TEXT-001 TYPE 'S'.       " Dados encontrados
     "PERFORM f_display_data USING lt_mara.
+    PERFORM f_define_fieldcat.
     PERFORM f_alv_mara.
   ELSE.
     MESSAGE: TEXT-002 TYPE 'E'.       "  Nenhum dado encontrado
@@ -402,24 +404,103 @@ FORM f_select_subqueries .
 
 ENDFORM.
 
+
+" Não aparece o nome das colunas
+" Verificar
+*&---------------------------------------------------------------------*
+*& Form f_define_fieldcat: Definir as características da tabela
+*&---------------------------------------------------------------------*
+FORM f_define_fieldcat .
+
+*  matnr, ersda, ernam,
+*         vpsta, pstat, mtart,
+*         matkl, meins, brgew,
+*         ntgew, gewei
+
+  FREE wa_fieldcat.
+  wa_fieldcat-fieldname = 'MATNR'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  FREE wa_fieldcat.
+  wa_fieldcat-fieldname = 'ERSDA'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  FREE wa_fieldcat.
+  wa_fieldcat-fieldname = 'ERNAM'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  FREE wa_fieldcat.
+  wa_fieldcat-fieldname = 'VPSTA'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  FREE wa_fieldcat.
+  wa_fieldcat-fieldname = 'PSTAT'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  FREE wa_fieldcat.
+  wa_fieldcat-fieldname = 'MTART'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  wa_fieldcat-fieldname = 'MATKL'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  wa_fieldcat-fieldname = 'MEINS'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  wa_fieldcat-fieldname = 'BRGEW'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  wa_fieldcat-fieldname = 'NTGEW'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+  wa_fieldcat-fieldname = 'GEWEI'.
+  APPEND wa_fieldcat TO lt_fieldcat.
+
+*  TRY .
+*      CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+*        EXPORTING
+*          i_program_name         = sy-repid
+*          i_internal_tabname     = 'lt_mara'
+*          "i_structure_name       =
+*        CHANGING
+*          ct_fieldcat            = lt_fieldcat
+*        EXCEPTIONS
+*          inconsistent_interface = 1
+*          program_error          = 2
+*          OTHERS                 = 3.
+*      IF sy-subrc <> 0.
+*        MESSAGE: 'Erro na Fieldcat' TYPE 'E'.
+*      ENDIF.
+*
+*    CATCH cx_root INTO DATA(lx_exception).
+*      WRITE: / 'Erro ocorrido:', lx_exception->get_text( ).
+*
+*  ENDTRY.
+ENDFORM.
+
 *&---------------------------------------------------------------------*
 *& Form f_alv_mara: Relatório ALV
 *&---------------------------------------------------------------------*
 FORM f_alv_mara.
+  TRY .
+      CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+        EXPORTING
+          i_callback_program = sy-repid
+          it_fieldcat        = lt_fieldcat
+        TABLES
+          t_outtab           = lt_mara
+        EXCEPTIONS
+          program_error      = 1
+          OTHERS             = 2.
 
-  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
-    EXPORTING
-      i_callback_program = sy-repid
-    TABLES
-      t_outtab           = lt_mara
-    EXCEPTIONS
-      program_error      = 1
-      OTHERS             = 2.
+*      IF sy-subrc EQ 0.
+*        MESSAGE: TEXT-001 TYPE 'S'.       " Dados encontrados
+*      ELSE.
+*        MESSAGE: TEXT-002 TYPE 'E'.       "  Nenhum dado encontrado
+*      ENDIF.
 
-  IF sy-subrc EQ 0.
-    MESSAGE: TEXT-001 TYPE 'S'.       " Dados encontrados
-  ELSE.
-    MESSAGE: TEXT-002 TYPE 'E'.       "  Nenhum dado encontrado
-  ENDIF.
+    CATCH cx_root INTO DATA(lx_exception).
+      WRITE: / 'Erro ocorrido:', lx_exception->get_text( ).
 
+  ENDTRY.
 ENDFORM.
