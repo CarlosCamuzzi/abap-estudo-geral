@@ -19,7 +19,7 @@
 *  ( X ) Seleção com FOR ALL ENTRIES
 *  ( X ) Joins com outras tabelas
 *  ( X ) Subqueries
-*  ( ) ALV
+*  ( X ) ALV
 * -------------------------------
 *
 **********************************************************************
@@ -419,63 +419,55 @@ FORM f_define_fieldcat .
 
   FREE wa_fieldcat.
   wa_fieldcat-fieldname = 'MATNR'.
+  wa_fieldcat-seltext_m = 'Material Number'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   FREE wa_fieldcat.
   wa_fieldcat-fieldname = 'ERSDA'.
+  wa_fieldcat-seltext_m = 'Created On'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   FREE wa_fieldcat.
   wa_fieldcat-fieldname = 'ERNAM'.
+  wa_fieldcat-seltext_m = 'Name of Person'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   FREE wa_fieldcat.
   wa_fieldcat-fieldname = 'VPSTA'.
+  wa_fieldcat-seltext_m = 'Maintenance complete mat'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   FREE wa_fieldcat.
   wa_fieldcat-fieldname = 'PSTAT'.
+  wa_fieldcat-seltext_m = 'Maintenance status'.
+  APPEND wa_fieldcat TO lt_fieldcat.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   FREE wa_fieldcat.
   wa_fieldcat-fieldname = 'MTART'.
+  wa_fieldcat-seltext_m = 'Material type'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   wa_fieldcat-fieldname = 'MATKL'.
+  wa_fieldcat-seltext_m = 'Material Group'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   wa_fieldcat-fieldname = 'MEINS'.
+  wa_fieldcat-seltext_m = 'Base Unit'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   wa_fieldcat-fieldname = 'BRGEW'.
+  wa_fieldcat-seltext_m = 'Gross weight'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   wa_fieldcat-fieldname = 'NTGEW'.
+  wa_fieldcat-seltext_m = 'Net weight'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
   wa_fieldcat-fieldname = 'GEWEI'.
+  wa_fieldcat-seltext_m = 'Weight Unit'.
   APPEND wa_fieldcat TO lt_fieldcat.
 
-*  TRY .
-*      CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
-*        EXPORTING
-*          i_program_name         = sy-repid
-*          i_internal_tabname     = 'lt_mara'
-*          "i_structure_name       =
-*        CHANGING
-*          ct_fieldcat            = lt_fieldcat
-*        EXCEPTIONS
-*          inconsistent_interface = 1
-*          program_error          = 2
-*          OTHERS                 = 3.
-*      IF sy-subrc <> 0.
-*        MESSAGE: 'Erro na Fieldcat' TYPE 'E'.
-*      ENDIF.
-*
-*    CATCH cx_root INTO DATA(lx_exception).
-*      WRITE: / 'Erro ocorrido:', lx_exception->get_text( ).
-*
-*  ENDTRY.
 ENDFORM.
 
 *&---------------------------------------------------------------------*
@@ -492,12 +484,6 @@ FORM f_alv_mara.
         EXCEPTIONS
           program_error      = 1
           OTHERS             = 2.
-
-*      IF sy-subrc EQ 0.
-*        MESSAGE: TEXT-001 TYPE 'S'.       " Dados encontrados
-*      ELSE.
-*        MESSAGE: TEXT-002 TYPE 'E'.       "  Nenhum dado encontrado
-*      ENDIF.
 
     CATCH cx_root INTO DATA(lx_exception).
       WRITE: / 'Erro ocorrido:', lx_exception->get_text( ).
