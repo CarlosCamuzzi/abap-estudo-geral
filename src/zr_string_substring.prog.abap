@@ -16,7 +16,7 @@ REPORT zr_string_substring NO STANDARD PAGE HEADING.
 
 DATA: lt_produto TYPE TABLE OF ztestudo_produto,
       ls_produto TYPE ztestudo_produto,
-      lt_string type TABLE OF string.
+      lt_string  TYPE TABLE OF string_table.
 
 **********************************************************************
 
@@ -77,4 +77,18 @@ ENDFORM.
 
 FORM f_format_string .
 
+  "DATA(lv_text) = substring( val = lt_produto off = 0 len = lines(lt_produto) ).
+
+  lt_string = VALUE #(
+      FOR ls_produto IN lt_produto
+        LET ls_string = ls_produto
+        IN ( idproduto = ls_string-idproduto
+             idfornec = ls_string-idfornec
+             descricao = ls_string-descricao
+             tipo_embalagem = ls_string-tipo_embalagem
+             embalagem = ls_string-embalagem
+             preco = ls_string-preco
+             quantidade = ls_string-quantidade
+        )
+  ).
 ENDFORM.
