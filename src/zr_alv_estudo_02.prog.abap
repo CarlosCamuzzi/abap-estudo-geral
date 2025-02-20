@@ -189,17 +189,19 @@ FORM f_display_alv .
   TRY .
       CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
         EXPORTING
-          i_callback_program     = sy-repid
-          i_callback_top_of_page = 'F_HEADER'
-          is_layout              = ls_layout
-          it_fieldcat            = lt_fieldcat
-          it_sort                = lt_sort
-          i_save                 = 'X'
+          i_callback_program       = sy-repid
+          i_callback_top_of_page   = 'F_HEADER'
+          is_layout                = ls_layout
+          it_fieldcat              = lt_fieldcat
+          it_sort                  = lt_sort
+          i_callback_pf_status_set = 'SUB_PF_STATUS'
+          "i_callback_user_command  = 'USER_COMMAND'
+          i_save                   = 'X'
         TABLES
-          t_outtab               = lt_output
+          t_outtab                 = lt_output
         EXCEPTIONS
-          program_error          = 1
-          OTHERS                 = 2.
+          program_error            = 1
+          OTHERS                   = 2.
 
       IF sy-subrc <> 0.
         MESSAGE TEXT-004 TYPE 'E'.      " Erro ao gerar relatório (display grid)
@@ -212,6 +214,16 @@ FORM f_display_alv .
 
 
 ENDFORM.
+
+FORM sub_pf_status USING rt_extab TYPE slis_t_extab.
+  SET PF-STATUS 'ZSTANDARD'.
+ENDFORM.
+
+*FORM user_command USING r_ucomm LIKE sy-ucomm
+*                        rs_selfield TYPE slis_selfield.
+*
+*
+*ENDFORM.
 
 FORM f_header.
 
