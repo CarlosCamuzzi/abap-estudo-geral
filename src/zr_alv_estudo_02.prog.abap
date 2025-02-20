@@ -195,7 +195,6 @@ FORM f_display_alv .
           it_fieldcat              = lt_fieldcat
           it_sort                  = lt_sort
           i_callback_pf_status_set = 'SUB_PF_STATUS'
-          "i_callback_user_command  = 'USER_COMMAND'
           i_save                   = 'X'
         TABLES
           t_outtab                 = lt_output
@@ -218,12 +217,6 @@ ENDFORM.
 FORM sub_pf_status USING rt_extab TYPE slis_t_extab.
   SET PF-STATUS 'ZSTANDARD'.
 ENDFORM.
-
-*FORM user_command USING r_ucomm LIKE sy-ucomm
-*                        rs_selfield TYPE slis_selfield.
-*
-*
-*ENDFORM.
 
 FORM f_header.
 
