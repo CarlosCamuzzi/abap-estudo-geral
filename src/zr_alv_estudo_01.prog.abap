@@ -30,15 +30,14 @@ DATA: ls_sort     TYPE slis_sortinfo_alv,          " Sort ALV
 SELECTION-SCREEN BEGIN OF BLOCK bc01 WITH FRAME TITLE TEXT-001.
   SELECT-OPTIONS: s_idprod FOR ztestudo_produto-idproduto.
   "                  s_idforn FOR ztestudo_fornec-idfornec.
-
 SELECTION-SCREEN END OF BLOCK bc01.
 
 SELECTION-SCREEN BEGIN OF BLOCK bc02 WITH FRAME TITLE TEXT-002.
   PARAMETERS: p_varian TYPE slis_vari.    " Save layout
 SELECTION-SCREEN END OF BLOCK bc02.
 
-
-" Implementar variant e user command
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_varian.
+  PERFORM f_variant CHANGING p_varian.
 
 **********************************************************************
 
@@ -53,13 +52,13 @@ FORM f_select_data.     " Search database
 
   SELECT * FROM ztestudo_produto
       INTO TABLE @lt_produto
-      WHERE idproduto IN @s_idprod.
+  WHERE idproduto IN @s_idprod.
 
   IF sy-subrc = 0.
     SELECT * FROM ztestudo_fornec
     INTO TABLE @lt_fornec
     FOR ALL ENTRIES IN @lt_produto
-      WHERE idfornec = @lt_produto-idfornec.
+    WHERE idfornec = @lt_produto-idfornec.
   ELSE.
     MESSAGE: 'Not found' TYPE 'E'.
   ENDIF.
@@ -117,6 +116,7 @@ FORM f_define_fieldcat.     " Defines column characteristics
       CASE ls_fieldcat-fieldname.
         WHEN 'IDPRODUTO'.
           ls_fieldcat-seltext_s = ls_fieldcat-seltext_m = ls_fieldcat-seltext_l = ls_fieldcat-reptext_ddic = 'IDPROD'.
+          ls_fieldcat-hotspot = 'X'.
 
         WHEN 'DESCRICAO'.
           ls_fieldcat-seltext_s = ls_fieldcat-seltext_m = ls_fieldcat-seltext_l = ls_fieldcat-reptext_ddic = 'DESCRICAO'.
@@ -145,7 +145,7 @@ FORM f_define_fieldcat.     " Defines column characteristics
       ENDCASE.
 
       MODIFY lt_fieldcat FROM ls_fieldcat
-        INDEX sy-tabix TRANSPORTING seltext_s seltext_m seltext_l reptext_ddic.
+        INDEX sy-tabix TRANSPORTING seltext_s seltext_m seltext_l reptext_ddic hotspot.
 
     ENDLOOP.
 
@@ -174,21 +174,24 @@ ENDFORM.
 
 FORM f_display_alv.
 
+  ls_variant-variant = p_varian.
+
   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
     EXPORTING
-      i_callback_program = sy-repid
-*     i_callback_user_command     = 'USER_COMMAND'
-     i_callback_top_of_page      = 'F_HEADER'
-      is_layout          = ls_layout
-      it_fieldcat        = lt_fieldcat
-      it_sort            = lt_sort
-      i_save             = 'X'
-      is_variant         = ls_variant
+      i_callback_program       = sy-repid
+      i_callback_pf_status_set = 'PF_STATUS'
+      i_callback_user_command  = 'USER_COMMAND'
+      i_callback_top_of_page   = 'F_HEADER'
+      is_layout                = ls_layout
+      it_fieldcat              = lt_fieldcat
+      it_sort                  = lt_sort
+      i_save                   = 'X'
+      is_variant               = ls_variant
     TABLES
-      t_outtab           = lt_output
+      t_outtab                 = lt_output
     EXCEPTIONS
-      program_error      = 1
-      OTHERS             = 2.
+      program_error            = 1
+      OTHERS                   = 2.
 
   IF sy-subrc <> 0.
     MESSAGE: 'Erro no relatório ALV' TYPE 'E'.
@@ -196,28 +199,114 @@ FORM f_display_alv.
 
 ENDFORM.
 
-form f_header.
+FORM  pf_status USING rt_extab TYPE slis_t_extab.
+  SET PF-STATUS 'ZSTANDARD'.
+ENDFORM.
 
-    free ls_header.
-    refresh lt_header.
+FORM f_sort.
 
-    ls_header-typ = 'H'.     " H = Header, S = Selection, A = Action
-    ls_header-info = 'Relatório de Produtos e Fornecedores'.
-    append ls_header to lt_header.
+  FREE ls_sort.
 
-    ls_header-typ = 'S'.
-    ls_header-key = 'Data.:'.
-    write sy-datum to ls_header-info.
-    append ls_header to lt_header.
+  ls_sort-spos = 1.
+  ls_sort-fieldname = 'DESCRICAO'.
+  ls_sort-tabname = 'LT_OUTPUT'.
+  ls_sort-up = 'X'.
+  APPEND ls_sort TO lt_sort.
 
-    ls_header-typ = 'S'.
-    ls_header-key = 'Hora.:'.
-    write sy-uzeit to ls_header-info.
-    append ls_header to lt_header.
+ENDFORM.
 
-    call FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
+FORM f_layout.
+
+  ls_layout-zebra = 'X'.
+  ls_layout-colwidth_optimize = 'X'.
+
+ENDFORM.
+
+FORM f_header.
+
+  FREE ls_header.
+  REFRESH lt_header.
+
+  ls_header-typ = 'H'.     " H = Header, S = Selection, A = Action
+  ls_header-info = 'Relatório de Produtos e Fornecedores'.
+  APPEND ls_header TO lt_header.
+
+  ls_header-typ = 'S'.
+  ls_header-key = 'Data.:'.
+  WRITE sy-datum TO ls_header-info.
+  APPEND ls_header TO lt_header.
+
+  ls_header-typ = 'S'.
+  ls_header-key = 'Hora.:'.
+  WRITE sy-uzeit TO ls_header-info.
+  APPEND ls_header TO lt_header.
+
+  CALL FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
+    EXPORTING
+      it_list_commentary = lt_header
+      i_logo             = 'ENJOYSAP_LOGO'.
+
+ENDFORM.
+
+FORM f_variant CHANGING p_p_varian.
+
+  DATA: lv_variant TYPE disvariant.
+  lv_variant-report = sy-repid.
+
+  CALL FUNCTION 'REUSE_ALV_VARIANT_F4'
+    EXPORTING
+      is_variant    = lv_variant
+      i_save        = 'A'
+    IMPORTING
+      es_variant    = lv_variant
+    EXCEPTIONS
+      not_found     = 1
+      program_error = 2
+      OTHERS        = 3.
+
+  IF sy-subrc = 0.
+    " Necessário para puxar a variant na tela de seleção
+    p_p_varian = lv_variant-variant.
+  ENDIF.
+
+ENDFORM.
+
+FORM user_command USING r_ucomm LIKE sy-ucomm
+                          rs_selfield TYPE slis_selfield.
+
+  " Campos que serão exibidos
+  DATA: lt_vimsellist TYPE STANDARD TABLE OF vimsellist,
+        ls_vimsellist TYPE vimsellist.
+
+  ls_vimsellist-viewfield = 'IDPRODUTO'.    " Campo
+  ls_vimsellist-operator = 'EQ'.            " Join condition
+  ls_vimsellist-value = rs_selfield-value.  " Valor clicado
+  APPEND ls_vimsellist TO lt_vimsellist.
+
+  " Tratamento para pegar somente os dados do campo que foi clicado
+  IF rs_selfield-sel_tab_field = 'LT_OUTPUT-IDPRODUTO'.
+    CALL FUNCTION 'VIEW_MAINTENANCE_CALL'
       EXPORTING
-        it_list_commentary = lt_header
-        i_logo             = 'ENJOYSAP_LOGO'.
+        action                       = 'S'                  " Exibir
+        view_name                    = 'ZTESTUDO_PRODUTO'    " Tabela transparente
+      TABLES
+        dba_sellist                  = lt_vimsellist
+      EXCEPTIONS
+        client_reference             = 1
+        foreign_lock                 = 2
+        invalid_action               = 3
+        no_clientindependent_auth    = 4
+        no_database_function         = 5
+        no_editor_function           = 6
+        no_show_auth                 = 7
+        no_tvdir_entry               = 8
+        no_upd_auth                  = 9
+        only_show_allowed            = 10
+        system_failure               = 11
+        unknown_field_in_dba_sellist = 12
+        view_not_found               = 13
+        maintenance_prohibited       = 14
+        OTHERS                       = 15.
+  ENDIF.
 
 ENDFORM.
