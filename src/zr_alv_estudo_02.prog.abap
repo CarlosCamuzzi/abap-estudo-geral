@@ -121,7 +121,7 @@ FORM f_fieldcat_alv .
             ls_fieldcat-col_pos = 3.
 
           WHEN 'AUFNR'.
-            ls_fieldcat-seltext_s = ls_fieldcat-seltext_m =
+            ls_fieldcat-seltext_s = ls_fieldcat-seltext_m = 'Ord'.
             ls_fieldcat-seltext_l = ls_fieldcat-reptext_ddic = 'Ordem'.
             ls_fieldcat-col_pos = 1.
 
