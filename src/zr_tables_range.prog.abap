@@ -33,7 +33,7 @@
 *        DATA: lt_params TYPE TABLE OF rsparams,
 *              ls_params LIKE LINE OF lt_params.
 *
-**         Para salvar uma variante de selection-screen
+**       *  Para salvar uma variante de selection-screen
 *        ls_params-selname = 'S_MATNR'.    "Nome do campo na tela de seleção
 *        ls_params-kind    = 'S'.          "S=Selection Option, P=Parameter
 *        ls_params-sign    = 'I'.          "I=Include, E=Exclude
