@@ -3,12 +3,13 @@
 *&---------------------------------------------------------------------*
 *
 *     Transparent Tables:
-*        - AFKO: Order Header Data PP Orders
-*        - AUFK: Order master data
-*
+*        - AFKO:  Order Header Data PP Orders
+*        - AUFK:  Order master data
+*        - IFLOT: Functional Location (Table)
+
 *      Views:
 *        - ITOB: PM technical objects (EQUI, funcational location)
-*        - IFLO:    Functional Location (View)
+*        - IFLO: Functional Location (View)
 *
 *     Structure: zrs_alv_estudo_02.
 *        - GSTRP type PM_ORDGSTRP
@@ -18,9 +19,13 @@
 *        - AUART type AUFART
 *        - VAPLZ type GEWRK
 *        - KTEXT type AUFTEXT
+*        - EQUNR type char18
 *        - ERDAT type AUFERFDAT
+*        - TPLNR type char30
 *
-*   Obs.: ITOB e IFLO não utilizada (não encontrei o compo chave com as tabelas AFKO ou AUFK)
+*    Obs.: Campos em comum AUFK, IFLOT e EQUI é OBJNR
+*          EQUNR e TPLNR está vinculado na VIEW ITOB e IFLO
+*          TPLNR está vinculado na tabela IFLOT
 *
 *&---------------------------------------------------------------------*
 
@@ -33,7 +38,7 @@ DATA: lt_fieldcat TYPE slis_t_fieldcat_alv,       " ALV
       lt_sort     TYPE slis_t_sortinfo_alv,
       lt_header   TYPE slis_t_listheader.
 
-DATA: lt_output TYPE TABLE OF zrs_alv_estudo_02. " Data
+DATA: lt_output TYPE TABLE OF zrs_alv_estudo_02_001. " Data
 
 " Work Area
 DATA: ls_fieldcat TYPE slis_fieldcat_alv,        " ALV
@@ -41,7 +46,7 @@ DATA: ls_fieldcat TYPE slis_fieldcat_alv,        " ALV
       ls_header   TYPE slis_listheader,
       ls_layout   TYPE slis_layout_alv.
 
-DATA: ls_output TYPE zrs_alv_estudo_02.          " Data
+DATA: ls_output TYPE zrs_alv_estudo_02_001.          " Data
 
 **********************************************************************
 
@@ -59,14 +64,34 @@ START-OF-SELECTION.
 END-OF-SELECTION.
 
 **********************************************************************
+*
+*FORM f_select_data .
+*
+*  SELECT afko~gstrp, afko~gltrp, aufk~bukrs, aufk~aufnr,
+*         aufk~auart,
+*         aufk~vaplz, aufk~ktext,
+*         aufk~erdat
+*    FROM aufk INNER JOIN afko ON afko~aufnr = aufk~aufnr
+*      INTO TABLE @lt_output
+*      WHERE aufk~bukrs = @p_bukrs.
+*
+*  IF sy-subrc NE 0.
+*    MESSAGE: TEXT-002 TYPE 'I'.     " Nenhum registro encontrado
+*    STOP.
+*  ENDIF.
+*
+*ENDFORM.
+
 
 FORM f_select_data .
 
   SELECT afko~gstrp, afko~gltrp, aufk~bukrs, aufk~aufnr,
          aufk~auart,
-         aufk~vaplz, aufk~ktext,
-         aufk~erdat
+         aufk~vaplz, aufk~ktext, equi~equnr,
+         aufk~erdat, iflot~tplnr
     FROM aufk INNER JOIN afko ON afko~aufnr = aufk~aufnr
+              INNER JOIN equi ON equi~objnr = aufk~objnr    " Para equnr
+              INNER JOIN iflot ON iflot~objnr = aufk~objnr  " Para tplnr
       INTO TABLE @lt_output
       WHERE aufk~bukrs = @p_bukrs.
 
@@ -93,7 +118,7 @@ FORM f_fieldcat_alv .
         EXPORTING
           i_program_name         = sy-repid
           i_internal_tabname     = 'LT_OUTPUT'
-          i_structure_name       = 'ZRS_ALV_ESTUDO_02'
+          i_structure_name       = 'ZRS_ALV_ESTUDO_02_001'
         CHANGING
           ct_fieldcat            = lt_fieldcat
         EXCEPTIONS
@@ -135,20 +160,31 @@ FORM f_fieldcat_alv .
             ls_fieldcat-seltext_s = 'Cn.Trab'.
             ls_fieldcat-seltext_m = 'CenTrabalho'.
             ls_fieldcat-seltext_l = ls_fieldcat-reptext_ddic =  'Centro Trabalho'.
+            ls_fieldcat-col_pos = 4.
 
           WHEN 'KTEXT'.
             ls_fieldcat-seltext_s = 'Desc'.
             ls_fieldcat-seltext_m = 'Descri'.
             ls_fieldcat-seltext_l = ls_fieldcat-reptext_ddic = 'Descrição'.
+            ls_fieldcat-col_pos = 5.
 
-            "WHEN 'EQUNR'.
+          WHEN 'EQUNR'.
+            ls_fieldcat-seltext_s = 'Eqp'.
+            ls_fieldcat-seltext_m = 'Equip'.
+            ls_fieldcat-seltext_l = ls_fieldcat-reptext_ddic = 'Equipamento'.
+            ls_fieldcat-col_pos = 6.
 
           WHEN 'ERDAT'.
             ls_fieldcat-seltext_s = 'Dt.Cri'.
             ls_fieldcat-seltext_m = 'Dt Criação'.
             ls_fieldcat-seltext_l = ls_fieldcat-reptext_ddic = 'Data Criação'.
+            ls_fieldcat-col_pos = 7.
 
-            "WHEN 'TPLNR'.
+          WHEN 'TPLNR'.
+            ls_fieldcat-seltext_s = 'Local'.
+            ls_fieldcat-seltext_m = 'Localid'.
+            ls_fieldcat-seltext_l = ls_fieldcat-reptext_ddic = 'Localidade'.
+            ls_fieldcat-col_pos = 8.
 
           WHEN OTHERS.
         ENDCASE.
@@ -161,7 +197,6 @@ FORM f_fieldcat_alv .
       WRITE: / 'Erro capturado:', lo_excp->get_text( ).
 
   ENDTRY.
-
 
 ENDFORM.
 
