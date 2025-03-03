@@ -6,7 +6,8 @@
 *        - AFKO:  Order Header Data PP Orders
 *        - AUFK:  Order master data
 *        - IFLOT: Functional Location (Table)
-
+*        - JEST:  Individual status for  object
+*
 *      Views:
 *        - ITOB: PM technical objects (EQUI, funcational location)
 *        - IFLO: Functional Location (View)
