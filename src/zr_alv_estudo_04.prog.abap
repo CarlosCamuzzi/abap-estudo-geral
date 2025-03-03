@@ -16,12 +16,15 @@
 *    - MATNR (Número do material)
 *    - NETWR (Valor líquido do item)
 *    - WERKS (Centro/Região)
-
+*
 *  KNA1: Dados Gerais do Cliente
 *    - KUNNR (Número do cliente)
 *    - NAME1 (Nome do cliente)
 *    - REGIO (Região do cliente)
-
+*
+*  MAKT: Material Descriptions
+*   - MATNR - Utilizado no USER_COMMAND
+*
 **********************************************************************
 *
 * Structure: ZRS_ALV_ESTUDO_04
@@ -43,13 +46,11 @@ TABLES: vbak, kna1, vbap.
 
 DATA: lt_output   TYPE TABLE OF zrs_alv_estudo_04,
       lt_fieldcat TYPE TABLE OF slis_fieldcat_alv,
-      lt_sort     TYPE slis_t_sortinfo_alv,
-      lt_header   TYPE slis_t_listheader.
+      lt_header   TYPE TABLE OF slis_listheader,
+      lt_sort     TYPE slis_t_sortinfo_alv.
 
 DATA: ls_output   TYPE zrs_alv_estudo_04,
       ls_fieldcat TYPE slis_fieldcat_alv,
-      ls_sort     TYPE slis_sortinfo_alv,
-      ls_header   TYPE slis_listheader,
       ls_layout   TYPE slis_layout_alv.
 
 **********************************************************************
@@ -65,6 +66,8 @@ SELECTION-SCREEN END OF BLOCK b01.
 START-OF-SELECTION.
   PERFORM f_select_data.
   PERFORM f_build_fieldcat.
+  PERFORM f_sort.
+  PERFORM f_layout.
   PERFORM f_build_alv.
 
 **********************************************************************
@@ -158,6 +161,7 @@ FORM f_build_fieldcat.
             <fs_fieldcat>-seltext_m = 'Num.Mt'.
             <fs_fieldcat>-seltext_l = 'Número Material'.
             <fs_fieldcat>-reptext_ddic = 'Número Material'.
+            "<fs_fieldcat>-hotspot = 'X'.
 
           WHEN 'NETWR'.
             <fs_fieldcat>-seltext_s = 'Vl'.
@@ -198,64 +202,139 @@ FORM f_build_fieldcat.
       MESSAGE: |ERROR: { lo_excp->get_text( ) }| TYPE 'I'.
   ENDTRY.
 
+ENDFORM.
+
+FORM f_sort.
+
+  REFRESH: lt_sort.
+  lt_sort = VALUE #( ( spos = 1 fieldname = 'VBELN' tabname = 'LT_OUTPUT' up = 'X' ) ).
+
+ENDFORM.
+
+FORM f_layout.
+
+  FREE ls_layout.
+  ls_layout-zebra = 'X'.
+  ls_layout-colwidth_optimize = 'X'.
 
 ENDFORM.
 
 FORM f_build_alv.
 
-  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
-    EXPORTING
-*     i_interface_check        = space
-*     i_bypassing_buffer       = space
-*     i_buffer_active          = space
-      i_callback_program       = sy-repid
-      i_callback_pf_status_set = 'F_PF_STATUS'
-*     i_callback_user_command  = space
-      i_callback_top_of_page   = 'F_HEADER'
-*     i_callback_html_top_of_page = space
-*     i_callback_html_end_of_list = space
-*     i_structure_name         =
-*     i_background_id          =
-*     i_grid_title             =
-*     i_grid_settings          =
-      is_layout                = ls_layout
-      it_fieldcat              = lt_fieldcat
-*     it_excluding             =
-*     it_special_groups        =
-      it_sort                  = lt_sort
-*     it_filter                =
-*     is_sel_hide              =
-*     i_default                = 'X'
-"     i_save                   = 'X'
-      "is_variant                  =
-*     it_events                =
-*     it_event_exit            =
-*     is_print                 =
-*     is_reprep_id             =
-*     i_screen_start_column    = 0
-*     i_screen_start_line      = 0
-*     i_screen_end_column      = 0
-*     i_screen_end_line        = 0
-*     i_html_height_top        = 0
-*     i_html_height_end        = 0
-*     it_alv_graphics          =
-*     it_hyperlink             =
-*     it_add_fieldcat          =
-*     it_except_qinfo          =
-*     ir_salv_fullscreen_adapter  =
-*     o_previous_sral_handler  =
-*      IMPORTING
-*     e_exit_caused_by_caller  =
-*     es_exit_caused_by_user   =
-    TABLES
-      t_outtab                 = lt_output
-    EXCEPTIONS
-      program_error            = 1
-      OTHERS                   = 2.
+  TRY.
+      CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+        EXPORTING
+          i_callback_program       = sy-repid
+          i_callback_pf_status_set = 'PF_STATUS'
+          "i_callback_user_command  = 'USER_COMMAND'
+          i_callback_top_of_page   = 'F_HEADER'
+          is_layout                = ls_layout
+          it_fieldcat              = lt_fieldcat
+          it_sort                  = lt_sort
+        TABLES
+          t_outtab                 = lt_output
+        EXCEPTIONS
+          program_error            = 1
+          OTHERS                   = 2.
 
-  IF sy-subrc <> 0.
-    MESSAGE: 'Erro na geração do ALV' TYPE 'E'.
-    STOP.
-  ENDIF.
+      IF sy-subrc <> 0.
+        MESSAGE: 'Erro na geração do ALV' TYPE 'E'.
+        STOP.
+      ENDIF.
+
+    CATCH cx_root INTO DATA(lo_excp).
+      MESSAGE: |ERROR: { lo_excp->get_text( ) }| TYPE 'I'.
+
+  ENDTRY.
 
 ENDFORM.
+
+FORM f_header.      " H = Header, S = Selection, A = Action
+
+  DATA: lv_time           TYPE string,
+        lv_formatted_time TYPE string,
+        lv_formatted_date TYPE string.
+
+  " Handle Time and Date
+  " Outra forma de concatenar
+*  lv_time = sy-uzeit.
+*  CONCATENATE lv_time+0(2) ':' lv_time+2(2) ':' lv_time+4(2)
+*    INTO lv_formatted_time.
+
+  TRY.
+      CALL FUNCTION 'CONVERT_DATE_TO_EXTERNAL'
+        EXPORTING
+          date_internal            = sy-datum
+        IMPORTING
+          date_external            = lv_formatted_date
+        EXCEPTIONS
+          date_internal_is_invalid = 1
+          OTHERS                   = 2.
+
+      lv_time = sy-uzeit.
+      lv_formatted_time = |{ lv_time+0(2) }:{ lv_time+2(2) }:{ lv_time+4(2) }|.
+
+    CATCH cx_root INTO DATA(lo_ex).
+      MESSAGE: |ERROR: { lo_ex->get_text( ) }| TYPE 'I'.
+  ENDTRY.
+
+  REFRESH: lt_header.
+
+  lt_header = VALUE #(
+    ( typ = 'H' info = |Relatório de vendas| )
+    ( typ = 'S' key = |Data Criação:| info = lv_formatted_date )
+    ( typ = 'S' key = |Hora Criação:| info = lv_formatted_time )
+    ( typ = 'S' key = |Usuário:|      info = sy-uname )
+  ).
+
+  TRY.
+      CALL FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
+        EXPORTING
+          it_list_commentary = lt_header.
+
+    CATCH cx_root INTO DATA(lo_excp).
+      MESSAGE: |ERROR: { lo_excp->get_text( ) }| TYPE 'I'.
+
+  ENDTRY.
+
+ENDFORM.
+
+FORM pf_status USING rt_extab TYPE slis_t_extab.
+  SET PF-STATUS 'ZSTANDARD'.
+ENDFORM.
+*
+*FORM user_command USING r_ucomm     LIKE sy-ucomm
+*                        rs_selfield TYPE slis_selfield.
+*
+*  " Campos que serão exibidos
+*  DATA: lt_vimsellist TYPE STANDARD TABLE OF vimsellist.
+*
+*  lt_vimsellist = VALUE #( ( viewfield = 'MATNR' operator = 'EQ' value = rs_selfield-value ) ).
+*
+*  " Tratamento para pegar somente os dados do campo que foi clicado
+*  IF rs_selfield-sel_tab_field = 'LT_OUTPUT-MATNR'.
+*    CALL FUNCTION 'VIEW_MAINTENANCE_CALL'
+*      EXPORTING
+*        action                       = 'S'                " Exibir
+*        view_name                    = 'MAKT'             " Tabela transparente
+*      TABLES
+*        dba_sellist                  = lt_vimsellist
+*      EXCEPTIONS
+*        client_reference             = 1
+*        foreign_lock                 = 2
+*        invalid_action               = 3
+*        no_clientindependent_auth    = 4
+*        no_database_function         = 5
+*        no_editor_function           = 6
+*        no_show_auth                 = 7
+*        no_tvdir_entry               = 8
+*        no_upd_auth                  = 9
+*        only_show_allowed            = 10
+*        system_failure               = 11
+*        unknown_field_in_dba_sellist = 12
+*        view_not_found               = 13
+*        maintenance_prohibited       = 14
+*        OTHERS                       = 15.
+*  ENDIF.
+*
+*ENDFORM.
